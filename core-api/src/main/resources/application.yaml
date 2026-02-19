@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: core-api
+server:
+  port: 8086
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+resilience4j:
+  retry:
+    instances:
+      chaosService:
+        max-attempts: 3
+        wait-duration: 200ms
+
+  circuitbreaker:
+    instances:
+      chaosService:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2
