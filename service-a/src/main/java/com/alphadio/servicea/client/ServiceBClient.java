@@ -24,7 +24,7 @@ public class ServiceBClient {
                 String.class
         );
 
-        // 🔥 FORCE failure detection
+        // FORCE failure detection
         if (response != null && response.contains("failure")) {
             throw new RuntimeException("Service B returned failure");
         }
