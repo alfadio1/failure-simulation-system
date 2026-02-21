@@ -13,7 +13,22 @@ services:
     build: ./chaos-service
     ports:
       - "8001:8001"
+    environment:
+      - CHAOS_ERROR_RATE_PERCENT=100
 
+  service-b:
+    build: ./service-b
+    ports:
+      - "8002:8002"
+    environment:
+      - CHAOS_URL=http://chaos-service:8001
+    
+  service-a:
+    build: ./service-a
+    ports:
+      - "8087:8087"
+
+  
   prometheus:
     image: prom/prometheus
     container_name: prometheus
@@ -28,3 +43,7 @@ services:
       - "3000:3000"
     depends_on:
       - prometheus
+    volumes:
+      - grafana-storage:/var/lib/grafana
+volumes:
+  grafana-storage:

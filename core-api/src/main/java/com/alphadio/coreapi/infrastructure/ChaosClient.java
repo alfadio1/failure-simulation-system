@@ -6,7 +6,8 @@ import io.github.resilience4j.retry.annotation.Retry;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 
 
 // This is the " external service calls": how to talk to external systems (HTTP calls, URLs, retries)
@@ -21,8 +22,13 @@ public class ChaosClient {
 
     private final RestTemplate restTemplate;
 
-    public ChaosClient(RestTemplate restTemplate) {
+    private final Counter fallbackCounter;
+
+    public ChaosClient(RestTemplate restTemplate, MeterRegistry meterRegistry) {
         this.restTemplate = restTemplate;
+        this.fallbackCounter = Counter.builder("fallback_calls_total")
+                .description("Number of fallback calls")
+                .register(meterRegistry);
     }
 
     @CircuitBreaker(name = "chaosService", fallbackMethod = "fallbackPing")
@@ -30,13 +36,14 @@ public class ChaosClient {
     public String pingChaosService() {
         logger.info("Calling chaos service");
         return restTemplate.getForObject(
-                "http://localhost:8001/chaos/ping",
+                "http://service-a:8087/workflow",
                 String.class
         );
     }
 
-    public String fallbackPing(Exception ex) {
-        logger.warn("Chaos service unavailable. Returning fallback. Reason: {}", ex.getMessage());
-        return "{\"message\":\"fallback response - chaos service unavailable\"}";
+    public String fallbackPing(Exception e) {
+        fallbackCounter.increment();
+        logger.warn("Fallback triggered: {}", e.getMessage());
+        return "fallback response - chaos service unavailable";
     }
 }
